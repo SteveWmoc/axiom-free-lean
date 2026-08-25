@@ -22,6 +22,29 @@ private def classLabel : Nat → String
   | 7 => "propext + Quot.sound + Classical.choice"
   | _ => "other"
 
+private structure TheoremRow where
+  name : Name
+  moduleName : String
+  statementClass : Nat
+  wholeClass : Nat
+
+private structure FrontierCandidate where
+  statementMask : Nat
+  statementHasOther : Bool
+  wholeMask : Nat
+  wholeHasOther : Bool
+  directProofDependencies : Array Name
+
+private def usesChoice (mask : Nat) : Bool :=
+  mask >= 4
+
+private def isStrictFrontier (candidate : FrontierCandidate) : Bool :=
+  candidate.statementMask == 0 && !candidate.statementHasOther &&
+    (candidate.wholeMask != 0 || candidate.wholeHasOther)
+
+private def isChoiceFrontier (candidate : FrontierCandidate) : Bool :=
+  !usesChoice candidate.statementMask && usesChoice candidate.wholeMask
+
 private def bump (counts : Array Nat) (i : Nat) : Array Nat :=
   counts.set! i (counts[i]! + 1)
 
@@ -58,6 +81,50 @@ private def mathlibDomain (env : Environment) (name : Name) : String :=
       let parts := env.header.moduleNames[modIdx.toNat]!.toString.splitOn "."
       parts.getD 1 "(root)"
 
+private def sourceModule (env : Environment) (name : Name) : String :=
+  match env.getModuleIdxFor? name with
+  | none => "(current)"
+  | some modIdx => env.header.moduleNames[modIdx.toNat]!.toString
+
+private def writeTheoremData (rows : Array TheoremRow) : IO Unit := do
+  IO.FS.createDirAll "results"
+  let out ← IO.FS.Handle.mk "results/TheoremData.tsv" .write
+  out.putStrLn "name\tmodule\tstatement_class\twhole_class\tproof_added_mask"
+  let rows := rows.toList.mergeSort fun a b => a.name.toString < b.name.toString
+  for row in rows do
+    let proofAddedMask :=
+      if row.statementClass < 8 && row.wholeClass < 8 then
+        row.wholeClass - row.statementClass
+      else
+        8
+    out.putStrLn s!"{row.name}\t{row.moduleName}\t{row.statementClass}\t{row.wholeClass}\t{proofAddedMask}"
+  out.flush
+
+private def bumpName (counts : Std.HashMap Name Nat) (name : Name) : Std.HashMap Name Nat :=
+  counts.insert name (counts[name]?.getD 0 + 1)
+
+private def writeDependencyFrequency (env : Environment)
+    (classes : Std.HashMap Name (Nat × Bool)) (candidates : Array FrontierCandidate) : IO Unit := do
+  let mut strictCounts : Std.HashMap Name Nat := {}
+  let mut choiceCounts : Std.HashMap Name Nat := {}
+  for candidate in candidates do
+    for dependency in candidate.directProofDependencies do
+      let (dependencyMask, dependencyHasOther) := classes[dependency]?.getD (0, false)
+      if isStrictFrontier candidate && (dependencyMask != 0 || dependencyHasOther) then
+        strictCounts := bumpName strictCounts dependency
+      if isChoiceFrontier candidate && usesChoice dependencyMask then
+        choiceCounts := bumpName choiceCounts dependency
+  let out ← IO.FS.Handle.mk "results/DirectDependencyFrequency.tsv" .write
+  out.putStrLn "policy\tdirect_dependency\ttheorem_count\tdependency_class\tmodule"
+  for (policy, counts) in [("strict_zero", strictCounts), ("choice_free", choiceCounts)] do
+    let entries := counts.toList.mergeSort fun a b =>
+      if a.2 == b.2 then a.1.toString < b.1.toString else a.2 > b.2
+    for (name, count) in entries.take 100 do
+      let (mask, hasOther) := classes[name]?.getD (0, false)
+      let idx := if hasOther then 8 else mask
+      out.putStrLn s!"{policy}\t{name}\t{count}\t{idx}\t{sourceModule env name}"
+  out.flush
+
 run_cmd do
   let env ← getEnv
   let mut allCounts := Array.replicate 9 0
@@ -71,9 +138,13 @@ run_cmd do
     Array.replicate 9 (Array.replicate 9 0)
   let mut mathlibDomainCounts : Std.HashMap String (Array Nat) := {}
   let mut theoremExamples : Array (Array Name) := Array.replicate 9 #[]
+  let mut axiomClasses : Std.HashMap Name (Nat × Bool) := {}
+  let mut theoremRows : Array TheoremRow := #[]
+  let mut frontierCandidates : Array FrontierCandidate := #[]
   for (name, info) in env.constants do
     let axioms ← Lean.collectAxioms name
     let (mask, hasOther) := standardMask axioms
+    axiomClasses := axiomClasses.insert name (mask, hasOther)
     let idx := if hasOther then 8 else mask
     allCounts := bump allCounts idx
     if info matches .thmInfo _ then
@@ -97,6 +168,21 @@ run_cmd do
             let domain := mathlibDomain env name
             let counts := mathlibDomainCounts[domain]?.getD (Array.replicate 9 0)
             mathlibDomainCounts := mathlibDomainCounts.insert domain (bump counts idx)
+            theoremRows := theoremRows.push {
+              name
+              moduleName := sourceModule env name
+              statementClass := statementIdx
+              wholeClass := idx
+            }
+            let candidate : FrontierCandidate := {
+              statementMask
+              statementHasOther
+              wholeMask := mask
+              wholeHasOther := hasOther
+              directProofDependencies := theoremInfo.value.getUsedConstants
+            }
+            if isStrictFrontier candidate || isChoiceFrontier candidate then
+              frontierCandidates := frontierCandidates.push candidate
           if theoremExamples[idx]!.size < 12 then
             theoremExamples := theoremExamples.set! idx (theoremExamples[idx]!.push name)
       | _ => pure ()
@@ -133,3 +219,5 @@ run_cmd do
   IO.println "\nfirst user-facing theorem examples by class"
   for idx in [0:9] do
     IO.println s!"{classLabel idx}: {theoremExamples[idx]!.toList}"
+  writeTheoremData theoremRows
+  writeDependencyFrequency env axiomClasses frontierCandidates

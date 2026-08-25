@@ -107,6 +107,23 @@ provable. Still, concrete examples below prove that a nontrivial part is acciden
 More broadly, 86,691 statements (33.06%) use no choice, whereas only 62,694 whole theorems (23.91%)
 use no choice. Thus 23,997 currently choice-using proofs have already choice-free statements.
 
+## Machine-readable theorem frontier
+
+The aggregate tables are accompanied by `results/TheoremData.tsv`, with one row for every
+user-facing theorem from a `Mathlib.*` source module. It records the declaration name, source
+module, statement class, whole-theorem class, and the standard-axiom mask added by the proof. The
+rows are sorted by declaration name so regenerated snapshots have stable diffs.
+
+The mask uses bit 1 for `propext`, bit 2 for `Quot.sound`, and bit 4 for `Classical.choice`; 0 means
+none of the three and 8 is reserved for the presence of another axiom. Consequently the complete
+strict frontier and choice frontier can be selected without rerunning Lean.
+
+`results/DirectDependencyFrequency.tsv` gives the 100 most frequently referenced contaminated
+direct proof dependencies for each frontier. These counts identify plausible shared bottlenecks,
+but they are deliberately not called cleanup gains. Removing one dependency need not remove an
+axiom when another transitive path remains. Exact counterfactual scoring requires a subsequent
+dependency-graph analysis.
+
 ## Domain snapshot
 
 These are source-directory counts. “Choice-free” allows `propext` and/or `Quot.sound`; “zero” allows
@@ -229,8 +246,9 @@ Operationally, the answer is now fairly sharp.
 1. Turn `AxiomCensus.lean` and `AxiomPaths.lean` into a small pinned audit project with CI.
 2. Submit the two proven low-level cleanups (`List.reverse_reverse` and `Nat.dvd_antisymm`) upstream,
    then use the same method on `Nat.gcd_comm` and `Nat.exists_infinite_primes`.
-3. Export the 42,839 zero-statement declarations and triage them into: logically classical;
-   proof/tactic contamination; dependency contamination; and extensional reformulation needed.
+3. Use the theorem-level export to triage the 23,385-member strict frontier into: logically
+   classical; proof/tactic contamination; dependency contamination; and extensional reformulation
+   needed.
 4. Build the compatibility layer already suggested by the SDG investigation: explicit
    `Decidable` parameters, witnessed data rather than `Nonempty` extraction, pointwise relations,
    setoids, list-backed finite constructions, and audited bridges to ordinary mathlib.
