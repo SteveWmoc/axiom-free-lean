@@ -1,0 +1,2 @@
+results/TheoremData.tsv -diff linguist-generated=true
+results/DirectDependencyFrequency.tsv linguist-generated=true

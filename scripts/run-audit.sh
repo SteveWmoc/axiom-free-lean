@@ -14,3 +14,5 @@ do
   echo "writing ${result}"
   lake env lean "${audit}" | tee "${result}"
 done
+
+./scripts/check-data.py

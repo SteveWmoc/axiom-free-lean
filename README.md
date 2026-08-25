@@ -72,8 +72,35 @@ API designation.
 | `Audit/CoreProbe.lean` | Small kernel and `Std` landmarks |
 | `Audit/RepresentativeProbe.lean` | Representative mathlib landmarks |
 | `Audit/ZeroBenchmarks.lean` | `#print axioms` checks for the replacement proofs |
-| `results/` | Committed output from the pinned audit run |
+| `results/TheoremData.tsv` | One machine-readable row per user-facing Mathlib theorem |
+| `results/DirectDependencyFrequency.tsv` | Most frequent contaminated direct proof dependencies |
+| `results/` | Other committed output from the pinned audit run |
 | `REPORT.md` | Full findings and interpretation |
+
+## Machine-readable data
+
+`results/TheoremData.tsv` is sorted by declaration name and has the columns
+
+```text
+name  module  statement_class  whole_class  proof_added_mask
+```
+
+The three low bits encode `propext` (1), `Quot.sound` (2), and
+`Classical.choice` (4). Thus class 0 is zero-axiom, class 3 is
+`propext + Quot.sound`, and class 7 contains all three. Class 8 is reserved
+for any dependency on another axiom; it does not occur in this pinned
+Mathlib-only dataset. For classes 0--7, `proof_added_mask` is the set of
+standard axioms contributed by the proof rather than its statement.
+
+The strict frontier consists of rows with `statement_class = 0` and
+`whole_class != 0`. The choice frontier consists of rows whose statement
+class does not contain bit 4 but whose whole class does.
+
+`results/DirectDependencyFrequency.tsv` ranks direct constants occurring in
+frontier proof terms by the number of frontier theorems that mention them.
+This is an exact direct-reference count and a useful triage heuristic. It is
+not yet a counterfactual cleanup score: a theorem may have additional paths
+to the same axiom after one dependency is repaired.
 
 ## Reproduce
 

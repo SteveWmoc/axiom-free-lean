@@ -13,3 +13,5 @@ do
   echo "checking ${audit}"
   lake env lean "${audit}" >/dev/null
 done
+
+./scripts/check-data.py
