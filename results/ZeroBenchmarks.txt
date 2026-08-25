@@ -1,0 +1,10 @@
+'AxiomFreeLean.zero_decidable_em' does not depend on any axioms
+'AxiomFreeLean.zero_not_not_em' does not depend on any axioms
+'AxiomFreeLean.zero_list_map_id_pointwise' does not depend on any axioms
+'AxiomFreeLean.zero_reverseAux_reverseAux_nil' does not depend on any axioms
+'AxiomFreeLean.zero_list_reverse_reverse' does not depend on any axioms
+'AxiomFreeLean.zero_eq_zero_of_zero_dvd' does not depend on any axioms
+'AxiomFreeLean.zero_nat_le_of_dvd' does not depend on any axioms
+'AxiomFreeLean.zero_nat_dvd_antisymm' does not depend on any axioms
+'AxiomFreeLean.PointwiseSetEq' does not depend on any axioms
+'AxiomFreeLean.zero_pointwise_union_comm' does not depend on any axioms

@@ -1,0 +1,34 @@
+'Nat.add_comm' does not depend on any axioms
+'Nat.mul_comm' does not depend on any axioms
+'Nat.gcd' does not depend on any axioms
+'Nat.gcd_comm' depends on axioms: [propext, Quot.sound]
+'Nat.dvd_antisymm' depends on axioms: [propext]
+'Nat.dvd_gcd' depends on axioms: [propext, Quot.sound]
+'Nat.gcd_dvd_left' depends on axioms: [propext, Quot.sound]
+'Nat.gcd_dvd_right' depends on axioms: [propext, Quot.sound]
+'Nat.exists_infinite_primes' depends on axioms: [propext, Classical.choice, Quot.sound]
+'List.reverse_reverse' depends on axioms: [propext]
+'List.reverseAux_reverseAux_nil' depends on axioms: [propext]
+'List.reverse_cons' depends on axioms: [propext]
+'List.reverse_append' depends on axioms: [propext]
+'List.map_id_fun' depends on axioms: [propext, Quot.sound]
+'pow_add' does not depend on any axioms
+'mul_assoc' does not depend on any axioms
+'MonoidHom.map_mul' does not depend on any axioms
+'Finset.ext' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Set.ext' depends on axioms: [propext, Quot.sound]
+'Subgroup.ext' depends on axioms: [propext, Quot.sound]
+'LinearMap.ext' depends on axioms: [Quot.sound]
+'Polynomial.ext' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CategoryTheory.Category.assoc' does not depend on any axioms
+'CategoryTheory.NatTrans.ext' does not depend on any axioms
+'Filter.Tendsto.comp' depends on axioms: [propext, Quot.sound]
+'Filter.Tendsto' depends on axioms: [propext, Quot.sound]
+'Continuous.comp' does not depend on any axioms
+'Continuous' does not depend on any axioms
+'HasDerivAt.add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'HasDerivAt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'MeasureTheory.integral_add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Real' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Real.linearOrder' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Real.sqrt_sq_eq_abs' depends on axioms: [propext, Classical.choice, Quot.sound]

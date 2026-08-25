@@ -1,0 +1,36 @@
+import Mathlib
+
+#print axioms Nat.add_comm
+#print axioms Nat.mul_comm
+#print axioms Nat.gcd
+#print axioms Nat.gcd_comm
+#print axioms Nat.dvd_antisymm
+#print axioms Nat.dvd_gcd
+#print axioms Nat.gcd_dvd_left
+#print axioms Nat.gcd_dvd_right
+#print axioms Nat.exists_infinite_primes
+#print axioms List.reverse_reverse
+#print axioms List.reverseAux_reverseAux_nil
+#print axioms List.reverse_cons
+#print axioms List.reverse_append
+#print axioms List.map_id_fun
+#print axioms pow_add
+#print axioms mul_assoc
+#print axioms MonoidHom.map_mul
+#print axioms Finset.ext
+#print axioms Set.ext
+#print axioms Subgroup.ext
+#print axioms LinearMap.ext
+#print axioms Polynomial.ext
+#print axioms CategoryTheory.Category.assoc
+#print axioms CategoryTheory.NatTrans.ext
+#print axioms Filter.Tendsto.comp
+#print axioms Filter.Tendsto
+#print axioms Continuous.comp
+#print axioms Continuous
+#print axioms HasDerivAt.add
+#print axioms HasDerivAt
+#print axioms MeasureTheory.integral_add
+#print axioms Real
+#print axioms Real.linearOrder
+#print axioms Real.sqrt_sq_eq_abs

@@ -1,0 +1,15 @@
+'zero_proof_irrelevance' does not depend on any axioms
+'zero_nat_add_comm' does not depend on any axioms
+'zero_nat_mul_comm' does not depend on any axioms
+'zero_list_map_id' does not depend on any axioms
+'zero_subtype_ext' does not depend on any axioms
+'funext' depends on axioms: [Quot.sound]
+'uses_funext' depends on axioms: [Quot.sound]
+'propext' depends on axioms: [propext]
+'uses_propext' depends on axioms: [propext]
+'Quot.sound' depends on axioms: [Quot.sound]
+'uses_quot_sound' depends on axioms: [Quot.sound]
+'uses_set_ext' depends on axioms: [propext, Quot.sound]
+'Classical.choice' depends on axioms: [Classical.choice]
+'Classical.em' depends on axioms: [propext, Classical.choice, Quot.sound]
+'uses_excluded_middle' depends on axioms: [propext, Classical.choice, Quot.sound]

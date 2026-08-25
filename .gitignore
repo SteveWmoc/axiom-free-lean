@@ -1,0 +1,9 @@
+/.lake/
+/.local-build/
+*.olean
+*.ilean
+*.c
+*.o
+*.so
+.DS_Store
+results/*.tmp

@@ -1,0 +1,112 @@
+raw environment
+class	all declarations	theorems
+none	155693	53675
+propext	79822	61186
+Quot.sound	9202	7495
+propext + Quot.sound	89484	71966
+Classical.choice	1980	909
+propext + Classical.choice	880	699
+Quot.sound + Classical.choice	345	280
+propext + Quot.sound + Classical.choice	433479	337110
+other	255	0
+
+user-facing names (not private or internal-detail)
+class	all declarations	theorems
+none	90566	29851
+propext	27715	21410
+Quot.sound	6123	4618
+propext + Quot.sound	51242	37964
+Classical.choice	1364	595
+propext + Classical.choice	494	376
+Quot.sound + Classical.choice	240	183
+propext + Quot.sound + Classical.choice	295294	226149
+other	103	0
+
+user-facing theorem counts by source module group
+group	none	propext	Quot.sound	p+Q	choice	p+C	Q+C	p+Q+C	other
+Init	5307	7308	114	6789	43	8	7	7564	0
+Std	1438	1004	80	2843	115	21	16	17569	0
+Lean	2806	1164	0	113	22	10	0	1302	0
+Mathlib	19454	11362	4412	27466	413	336	158	198615	0
+other packages	846	572	12	753	2	1	2	1099	0
+current file	0	0	0	0	0	0	0	0	0
+
+Mathlib theorem statement dependencies (same user-facing-name filter)
+class	statements
+none	42839
+propext	11632
+Quot.sound	4690
+propext + Quot.sound	27530
+Classical.choice	520
+propext + Classical.choice	162
+Quot.sound + Classical.choice	91
+propext + Quot.sound + Classical.choice	174752
+other	0
+
+Mathlib theorems with zero-axiom statements, classified by whole theorem
+whole-theorem class	count
+none	19454
+propext	5549
+Quot.sound	1466
+propext + Quot.sound	6036
+Classical.choice	144
+propext + Classical.choice	95
+Quot.sound + Classical.choice	26
+propext + Quot.sound + Classical.choice	10069
+other	0
+
+Mathlib statement-class by whole-theorem-class matrix
+statement\whole	none	propext	Quot.sound	p+Q	choice	p+C	Q+C	p+Q+C	other
+none	19454	5549	1466	6036	144	95	26	10069	0
+propext	0	5813	0	2180	0	76	0	3563	0
+Quot.sound	0	0	2946	1012	0	0	27	705	0
+propext + Quot.sound	0	0	0	18238	0	0	0	9292	0
+Classical.choice	0	0	0	0	269	64	48	139	0
+propext + Classical.choice	0	0	0	0	0	101	0	61	0
+Quot.sound + Classical.choice	0	0	0	0	0	0	57	34	0
+propext + Quot.sound + Classical.choice	0	0	0	0	0	0	0	174752	0
+other	0	0	0	0	0	0	0	0	0
+
+Mathlib user-facing theorem counts by top-level source directory
+domain	none	propext	Quot.sound	p+Q	choice	p+C	Q+C	p+Q+C	other
+Algebra	5810	4010	1526	8620	47	65	50	26228	0
+AlgebraicGeometry	61	108	0	122	0	7	0	4795	0
+AlgebraicTopology	69	138	19	222	0	6	0	3259	0
+Analysis	208	68	53	377	10	0	0	25540	0
+CategoryTheory	1865	1197	379	1721	173	196	36	26854	0
+Combinatorics	788	416	54	658	27	0	3	5010	0
+Computability	334	145	7	178	0	0	0	888	0
+Condensed	0	0	0	2	0	0	0	254	0
+Control	124	24	32	111	0	0	0	25	0
+Data	2665	1828	524	3852	50	27	11	12888	0
+Dynamics	46	9	8	40	0	0	0	715	0
+FieldTheory	4	1	2	6	0	0	0	2549	0
+Geometry	41	17	0	72	0	0	0	5281	0
+GroupTheory	473	278	118	1161	6	14	2	5414	0
+InformationTheory	3	0	14	1	0	0	0	113	0
+Lean	33	7	2	0	0	0	0	28	0
+LinearAlgebra	126	109	179	2135	1	0	10	8312	0
+Logic	700	130	283	369	32	4	18	770	0
+MeasureTheory	173	20	53	125	2	0	1	11254	0
+ModelTheory	227	49	110	306	1	0	1	661	0
+NumberTheory	95	144	15	205	0	0	0	5546	0
+Order	3675	1505	607	3002	32	6	14	8046	0
+Probability	5	1	0	27	10	0	0	3954	0
+RepresentationTheory	0	10	0	336	0	0	0	1240	0
+RingTheory	328	374	37	1672	9	9	0	14510	0
+SetTheory	87	35	34	219	1	1	7	2756	0
+Tactic	721	525	4	82	2	0	2	802	0
+Testing	4	1	1	0	0	0	0	7	0
+Topology	763	205	351	1836	10	1	3	20904	0
+Util	26	8	0	9	0	0	0	12	0
+
+first user-facing theorem examples by class
+none: [instIsGCDMonoidOfGCDMonoid, instIsLeftCancelVAdd, Algebra.ofId_apply, RingHomClass.toMonoidWithZeroHomClass, Function.instIsPreorderSwapProp, add_left_strictMono, right_ne_zero_of_mul, Fin.snoc_castAdd, smul_lt_smul_iff_of_pos_right, CategoryTheory.ObjectProperty.unop_injective_iff, GenContFract.IntFractPair.mk.sizeOf_spec, DistLat.mk.inj]
+propext: [Nat.digitChar_ne, USize.toUSize_toUInt32, himp_left_comm, Lean.Meta.DiscrTree.Key.proj.injEq, Encodable.skolem, FirstOrder.Language.Relations.isUniversal_transitive, Std.IterStep.skip.injEq, List.foldl_attachWith, Pell.isPell_one, CategoryTheory.ShortComplex.Splitting.isSplitMono_f, Lean.Meta.Grind.Arith.Linear.RingIneqCnstrProof.core.injEq, CategoryTheory.CommSq.toLoc]
+Quot.sound: [continuous_ofMul, CategoryTheory.OplaxFunctor.map₂_leftUnitor_assoc, CategoryTheory.MonoidalCategory.MonoidalRightAction.actionUnitIso_hom_naturality_assoc, FirstOrder.Language.Theory.ModelType.nonempty', CommSemiring.ext_iff, CategoryTheory.Square.Hom.comm₁₂_assoc, LatticeHom.id_comp, MeasurableEquiv.coe_toEquiv_symm, SemidirectProduct.mul_right, Stream'.tail_iterate, StrictAnti.le_iff_ge, Pi.single.congr_simp]
+propext + Quot.sound: [List.pairwise_le_finRange, RingHomInvPair.instStarRingEnd, Std.HashMap.getElem_insertManyIfNewUnit_list, Int8.ofIntLE_lt_iff_lt, ClusterPt.of_inf_left, Int8.toInt_sub, Finset.sum_eq_fold, Set.iUnion₂_add, Finset.sum_empty, PolynomialLaw.smul_def_apply, GrpWithZero.coe_id, MonoidHom.inv_comp]
+Classical.choice: [CategoryTheory.Limits.ImageMap.map_ι, Homeomorph.symm_bijective, IsUnit.unit_spec, CategoryTheory.Limits.HasZeroObject.from_zero_ext_iff, Filter.HasBasis.set_index_subset, ContinuousLinearMap.HasLeftInverse.leftInverse.congr_simp, Quotient.countable, LTSeries.longestOf_len_unique, ExistsUnique.choose_eq_iff, CategoryTheory.Limits.HasZeroObject.instEpi, Std.instNonemptyRecursiveMutex, CategoryTheory.Limits.HasImageMap.mk]
+propext + Classical.choice: [IsAddUnit.addUnit_map, CategoryTheory.Localization.Construction.liftToPathCategory_obj, IsUnit.liftRight_inv_mul, CategoryTheory.ObjectProperty.instContainsZeroMinOfIsClosedUnderIsomorphisms, Submonoid.fromLeftInv_one, RelSeries.nonempty_of_infiniteDimensional, IsUnit.liftRight.congr_simp, Int.eq_one_or_neg_one_of_mul_eq_neg_one', CategoryTheory.Projective.hasLiftingProperty_of_isZero, Int.isUnit_iff_abs_eq, CategoryTheory.ObjectProperty.instIsClosedUnderSubobjectsIsZeroOfHasZeroMorphisms, CategoryTheory.Presieve.ofArrows.eq_eqToHom_comp_hom_idx]
+Quot.sound + Classical.choice: [Submonoid.coe_equivMapOfInjective_apply, Lean.Order.top_apply, Quotient.induction_on_pi, Function.Surjective.piMap, Lean.Order.sup_apply, RelIso.ofSurjective_apply, ContinuousMulEquiv.symm_bijective, Pi.sdiv_apply, Matrix.replicateCol_eq_zero, StarRingEquiv.ofBijective_apply, Nat.exists_strictAnti', CategoryTheory.IsFiltered.coeq_condition_assoc]
+propext + Quot.sound + Classical.choice: [ProbabilityTheory.Kernel.sectL_prodMkLeft, ProbabilityTheory.Kernel.disintegrate, nhds_nhdsAdjoint, CategoryTheory.Limits.WalkingMultispan.instSubsingletonHomLeft, SmoothBumpFunction.toFun.congr_simp, SSet.stdSimplex.δ_zero_eq_const, isClosed_monotone, ContinuousAt.comp₂, Std.ExtDHashMap.get_modify_self, CategoryTheory.Limits.IsLimit.lift_comp_conePointUniqueUpToIso_hom, ProbabilityTheory.mgf_congr_identDistrib, Filter.HasBasis.isUniformInducing_iff]
+other: []

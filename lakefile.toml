@@ -1,0 +1,13 @@
+name = "axiom-free-lean"
+version = "0.1.0"
+description = "Reproducible audits of Lean dependencies on propext, Quot.sound, and Classical.choice"
+license = "Apache-2.0"
+defaultTargets = ["AxiomFreeLean"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "db584cd6d46c92f209a44c0f1c829460d327499d"
+
+[[lean_lib]]
+name = "AxiomFreeLean"

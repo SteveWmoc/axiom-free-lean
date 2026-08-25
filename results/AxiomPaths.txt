@@ -1,0 +1,36 @@
+List.reverse_reverse
+  propext: List.reverse_reverse -> List.reverseAux_reverseAux_nil -> eq_self -> eq_true -> propext
+  Quot.sound: (not used)
+  Classical.choice: (not used)
+Nat.gcd_comm
+  propext: Nat.gcd_comm -> Nat.dvd_gcd -> Nat.dvd_mod_iff -> Nat.mod_add_div -> eq_false -> propext
+  Quot.sound: Nat.gcd_comm -> Nat.dvd_gcd -> Nat.gcd_zero_left -> _private.Init.Data.Nat.Gcd.0.Nat.gcd.eq_1 -> _private.Init.Data.Nat.Gcd.0.Nat.gcd.eq_def -> _private.Init.Data.Nat.Gcd.0.Nat.gcd._unary.eq_def -> WellFounded.Nat.fix_eq -> funext -> Quot.sound
+  Classical.choice: (not used)
+Nat.exists_infinite_primes
+  propext: Nat.exists_infinite_primes -> Nat.minFac_dvd -> Nat.minFac_one -> Nat.dvd_one._simp_1 -> propext
+  Quot.sound: Nat.exists_infinite_primes -> Nat.minFac_dvd -> Nat.minFac_has_prop -> forall_congr -> funext -> Quot.sound
+  Classical.choice: Nat.exists_infinite_primes -> Nat.minFac_dvd -> Nat.minFac_has_prop -> Nat.add_eq_right._simp_1 -> Nat.add_eq_right -> _private.Init.Data.Nat.Lemmas.0.Nat.add_eq_right._proof_1_1 -> Classical.propDecidable -> Classical.choice
+Finset.ext
+  propext: Finset.ext -> SetLike.ext -> Set.ext -> propext
+  Quot.sound: Finset.ext -> SetLike.ext -> Set.ext -> funext -> Quot.sound
+  Classical.choice: Finset.ext -> Finset.instSetLike -> Finset.instSetLike._proof_1 -> Multiset.Nodup.ext -> List.perm_ext_iff_of_nodup -> Classical.propDecidable -> Classical.choice
+Set.ext
+  propext: Set.ext -> propext
+  Quot.sound: Set.ext -> funext -> Quot.sound
+  Classical.choice: (not used)
+LinearMap.ext
+  propext: (not used)
+  Quot.sound: LinearMap.ext -> DFunLike.ext -> funext -> Quot.sound
+  Classical.choice: (not used)
+Filter.Tendsto
+  propext: Filter.Tendsto -> Filter.instPartialOrder -> Filter.instPartialOrder._proof_4 -> Set.Subset.antisymm -> Set.ext -> propext
+  Quot.sound: Filter.Tendsto -> Filter.instPartialOrder -> Filter.instPartialOrder._proof_4 -> Set.Subset.antisymm -> Set.ext -> funext -> Quot.sound
+  Classical.choice: (not used)
+Real
+  propext: Real -> Real.ofCauchy -> Rat.linearOrder -> Rat.le_trans -> propext
+  Quot.sound: Real -> Real.ofCauchy -> CauSeq.Completion.Cauchy -> CauSeq.equiv -> CauSeq.equiv._proof_1 -> CauSeq.equiv._proof_3 -> funext -> Quot.sound
+  Classical.choice: Real -> Real.ofCauchy -> Rat.instIsStrictOrderedRing -> IsDomain.to_noZeroDivisors -> IsRightCancelMulZero.to_noZeroDivisors -> Classical.or_iff_not_imp_right -> Classical.propDecidable -> Classical.choice
+HasDerivAt.add
+  propext: HasDerivAt.add -> IsBoundedSMul.continuousSMul -> propext
+  Quot.sound: HasDerivAt.add -> IsBoundedSMul.continuousSMul -> Prod.pseudoMetricSpaceMax -> Prod.pseudoMetricSpaceMax._proof_8 -> funext -> Quot.sound
+  Classical.choice: HasDerivAt.add -> IsBoundedSMul.continuousSMul -> Real.linearOrder -> Classical.propDecidable -> Classical.choice

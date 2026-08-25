@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If this audit is useful in your work, please cite the repository."
+title: "axiom-free-lean: a reproducible Lean and mathlib axiom census"
+version: 0.1.0
+date-released: 2026-08-25
+authors:
+  - family-names: Sabean
+    given-names: Steven
+repository-code: "https://github.com/SteveWmoc/axiom-free-lean"
+license: Apache-2.0
