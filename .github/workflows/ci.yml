@@ -24,5 +24,13 @@ jobs:
           use-mathlib-cache: true
       - name: Run the pinned audit suite
         run: ./scripts/run-audit.sh
+      - name: Expose generated counterfactual data
+        if: always()
+        run: |
+          if [[ -f results/CounterfactualGain.tsv ]]; then
+            echo "BEGIN_COUNTERFACTUAL_GAIN"
+            sed -n '1,220p' results/CounterfactualGain.tsv
+            echo "END_COUNTERFACTUAL_GAIN"
+          fi
       - name: Require committed results to be current
         run: git diff --exit-code -- results/
