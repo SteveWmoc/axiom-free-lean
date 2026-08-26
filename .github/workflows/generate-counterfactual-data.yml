@@ -1,3 +1,4 @@
+# One-off workflow; removed after committing the generated snapshot.
 name: Generate counterfactual data
 
 on:
