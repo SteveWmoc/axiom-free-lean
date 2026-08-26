@@ -1,13 +1,13 @@
 raw environment
 class	all declarations	theorems
-none	155734	53679
-propext	79824	61188
+none	155783	53683
+propext	79834	61190
 Quot.sound	9202	7495
-propext + Quot.sound	89486	71966
+propext + Quot.sound	89508	71969
 Classical.choice	1980	909
 propext + Classical.choice	880	699
 Quot.sound + Classical.choice	345	280
-propext + Quot.sound + Classical.choice	433482	337110
+propext + Quot.sound + Classical.choice	433502	337110
 other	255	0
 
 user-facing names (not private or internal-detail)
