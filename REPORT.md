@@ -121,8 +121,21 @@ strict frontier and choice frontier can be selected without rerunning Lean.
 `results/DirectDependencyFrequency.tsv` gives the 100 most frequently referenced contaminated
 direct proof dependencies for each frontier. These counts identify plausible shared bottlenecks,
 but they are deliberately not called cleanup gains. Removing one dependency need not remove an
-axiom when another transitive path remains. Exact counterfactual scoring requires a subsequent
-dependency-graph analysis.
+axiom when another transitive path remains.
+
+`results/CounterfactualGain.tsv` supplies the corresponding exact single-declaration calculation.
+For each frontier theorem and forbidden axiom, the audit computes the declarations occurring on
+every dependency path. A candidate receives credit only when it dominates every path to every
+axiom forbidden by the policy. A strict-zero candidate must have a zero-axiom statement; a
+choice-free candidate must have a statement not using `Classical.choice`; axiom declarations are
+excluded. The table reports the top 100 candidates for each policy together with deterministic
+witness theorems.
+
+The word *counterfactual* is essential. The score is exact for the operation “replace this one
+declaration's implementation by a policy-clean implementation and hold the rest of the graph
+fixed.” It neither proves that the replacement exists nor predicts joint gains from several
+repairs. Statement reformulations, metalinguistic uses of classical principles, and tooling-only
+uses are outside this kernel-dependency calculation and should be classified separately.
 
 ## Domain snapshot
 
