@@ -36,10 +36,10 @@ private structure FrontierCandidate where
   wholeHasOther : Bool
   directProofDependencies : Array Name
 
-private structure DominatorState where
-  memo : Std.HashMap Name NameSet := {}
-  active : NameSet := {}
-  cycleDetected : Bool := false
+private structure DominatorInfo where
+  root : Name
+  idom : Std.HashMap Name Name := {}
+  nodeCount : Nat := 0
   missingEdgeDetected : Bool := false
 
 private structure GainEvidence where
@@ -93,37 +93,92 @@ private def intersectNameSets (left right : NameSet) : NameSet :=
   left.toArray.foldl (init := {}) fun result name =>
     if right.contains name then result.insert name else result
 
-private partial def mandatoryNodes (env : Environment)
-    (classes : Std.HashMap Name (Nat × Bool)) (target : Name) (targetBit : Nat)
-    (name : Name) : StateM DominatorState NameSet := do
-  let state ← get
-  if let some cached := state.memo[name]? then
-    return cached
-  if state.active.contains name then
-    modify fun state => { state with cycleDetected := true }
-    return {}
-  modify fun state => { state with active := state.active.insert name }
-  let result ←
-    if name == target then
-      pure (({} : NameSet).insert name)
-    else
+private partial def reversePostorderVisit
+    (successors : Std.HashMap Name (Array Name)) (name : Name) :
+    StateM (NameSet × Array Name) Unit := do
+  let (visited, _) ← get
+  if visited.contains name then
+    return ()
+  modify fun state => (state.1.insert name, state.2)
+  for successor in successors[name]?.getD #[] do
+    reversePostorderVisit successors successor
+  modify fun state => (state.1, state.2.push name)
+
+private def intersectImmediateDominators
+    (idom : Std.HashMap Name Name) (rpoIndex : Std.HashMap Name Nat)
+    (left right : Name) : Name := Id.run do
+  let mut left := left
+  let mut right := right
+  while left != right do
+    while (rpoIndex[left]?.getD 0) > (rpoIndex[right]?.getD 0) do
+      left := idom[left]?.getD left
+    while (rpoIndex[right]?.getD 0) > (rpoIndex[left]?.getD 0) do
+      right := idom[right]?.getD right
+  return left
+
+private def buildDominatorInfo (env : Environment)
+    (classes : Std.HashMap Name (Nat × Bool)) (target : Name) (targetBit : Nat) :
+    DominatorInfo := Id.run do
+  let mut successors : Std.HashMap Name (Array Name) := {}
+  let mut predecessors : Std.HashMap Name (Array Name) := {}
+  let mut missingEdgeDetected := false
+  for (name, _) in env.constants do
+    let (mask, _) := classes[name]?.getD (0, false)
+    if maskUses mask targetBit then
       let relevant := (directDependencies env name).filter fun dependency =>
-        let (mask, _) := classes[dependency]?.getD (0, false)
-        maskUses mask targetBit
-      if relevant.isEmpty then
-        modify fun state => { state with missingEdgeDetected := true }
-        pure {}
+        let (dependencyMask, _) := classes[dependency]?.getD (0, false)
+        maskUses dependencyMask targetBit
+      if name != target && relevant.isEmpty then
+        missingEdgeDetected := true
+      for dependency in relevant do
+        let dependentNodes := successors[dependency]?.getD #[]
+        successors := successors.insert dependency (dependentNodes.push name)
+        let dependencyNodes := predecessors[name]?.getD #[]
+        predecessors := predecessors.insert name (dependencyNodes.push dependency)
+  let (_, traversal) := (reversePostorderVisit successors target).run ({}, #[])
+  let reversePostorder := traversal.2.reverse
+  let mut rpoIndex : Std.HashMap Name Nat := {}
+  for i in [0:reversePostorder.size] do
+    rpoIndex := rpoIndex.insert reversePostorder[i]! i
+  let mut idom : Std.HashMap Name Name := {}
+  idom := idom.insert target target
+  let mut changed := true
+  while changed do
+    changed := false
+    for i in [1:reversePostorder.size] do
+      let name := reversePostorder[i]!
+      let mut newIdom? : Option Name := none
+      for predecessor in predecessors[name]?.getD #[] do
+        if idom.contains predecessor then
+          newIdom? := some <| match newIdom? with
+            | none => predecessor
+            | some current =>
+                intersectImmediateDominators idom rpoIndex current predecessor
+      if let some newIdom := newIdom? then
+        if idom[name]? != some newIdom then
+          idom := idom.insert name newIdom
+          changed := true
+  return {
+    root := target
+    idom
+    nodeCount := reversePostorder.size
+    missingEdgeDetected
+  }
+
+private def dominatorChainAux (info : DominatorInfo) :
+    Nat → Name → NameSet → Option NameSet
+  | 0, _, _ => none
+  | Nat.succ fuel, name, result =>
+      let result := result.insert name
+      if name == info.root then
+        some result
       else
-        let mut common ← mandatoryNodes env classes target targetBit relevant[0]!
-        for i in [1:relevant.size] do
-          let next ← mandatoryNodes env classes target targetBit relevant[i]!
-          common := intersectNameSets common next
-        pure (common.insert name)
-  let state ← get
-  set { state with
-    memo := state.memo.insert name result
-    active := state.active.erase name }
-  return result
+        match info.idom[name]? with
+        | some parent => dominatorChainAux info fuel parent result
+        | none => none
+
+private def dominatorChain (info : DominatorInfo) (name : Name) : Option NameSet :=
+  dominatorChainAux info (info.nodeCount + 1) name {}
 
 private def isNonAxiomDeclaration (env : Environment) (name : Name) : Bool :=
   match env.find? name with
@@ -236,11 +291,14 @@ private def scoreCounterfactualGains (env : Environment)
     Std.HashMap Name GainEvidence × Std.HashMap Name GainEvidence × Bool × Nat := Id.run do
   let candidates := candidates.toList.mergeSort fun left right =>
     left.name.toString < right.name.toString
-  let mut propextState : DominatorState := {}
-  let mut quotState : DominatorState := {}
-  let mut choiceState : DominatorState := {}
+  let propextInfo := buildDominatorInfo env classes ``propext 1
+  let quotInfo := buildDominatorInfo env classes ``Quot.sound 2
+  let choiceInfo := buildDominatorInfo env classes ``Classical.choice 4
   let mut strictCounts : Std.HashMap Name GainEvidence := {}
   let mut choiceCounts : Std.HashMap Name GainEvidence := {}
+  let mut graphInvalid :=
+    propextInfo.missingEdgeDetected || quotInfo.missingEdgeDetected ||
+      choiceInfo.missingEdgeDetected
   let mut unsupportedOther := 0
   for candidate in candidates do
     if isStrictFrontier candidate then
@@ -249,34 +307,29 @@ private def scoreCounterfactualGains (env : Environment)
       else
         let mut common? : Option NameSet := none
         if maskUses candidate.wholeMask 1 then
-          let (nodes, nextState) :=
-            (mandatoryNodes env classes ``propext 1 candidate.name).run propextState
-          propextState := nextState
-          common? := some nodes
+          match dominatorChain propextInfo candidate.name with
+          | some nodes => common? := some nodes
+          | none => graphInvalid := true
         if maskUses candidate.wholeMask 2 then
-          let (nodes, nextState) :=
-            (mandatoryNodes env classes ``Quot.sound 2 candidate.name).run quotState
-          quotState := nextState
-          common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          match dominatorChain quotInfo candidate.name with
+          | some nodes =>
+              common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          | none => graphInvalid := true
         if maskUses candidate.wholeMask 4 then
-          let (nodes, nextState) :=
-            (mandatoryNodes env classes ``Classical.choice 4 candidate.name).run choiceState
-          choiceState := nextState
-          common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          match dominatorChain choiceInfo candidate.name with
+          | some nodes =>
+              common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          | none => graphInvalid := true
         for name in common?.getD {} |>.toArray do
           if isNonAxiomDeclaration env name then
             strictCounts := bumpEvidence strictCounts name candidate.name
     if isChoiceFrontier candidate then
-      let (nodes, nextState) :=
-        (mandatoryNodes env classes ``Classical.choice 4 candidate.name).run choiceState
-      choiceState := nextState
-      for name in nodes.toArray do
-        if isNonAxiomDeclaration env name then
-          choiceCounts := bumpEvidence choiceCounts name candidate.name
-  let graphInvalid :=
-    propextState.cycleDetected || quotState.cycleDetected || choiceState.cycleDetected ||
-      propextState.missingEdgeDetected || quotState.missingEdgeDetected ||
-      choiceState.missingEdgeDetected
+      match dominatorChain choiceInfo candidate.name with
+      | some nodes =>
+          for name in nodes.toArray do
+            if isNonAxiomDeclaration env name then
+              choiceCounts := bumpEvidence choiceCounts name candidate.name
+      | none => graphInvalid := true
   return (strictCounts, choiceCounts, graphInvalid, unsupportedOther)
 
 private def gainRows (env : Environment) (classes : Std.HashMap Name (Nat × Bool))
