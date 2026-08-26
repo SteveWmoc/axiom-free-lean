@@ -1,2 +1,3 @@
 results/TheoremData.tsv -diff linguist-generated=true
 results/DirectDependencyFrequency.tsv linguist-generated=true
+results/CounterfactualGain.tsv linguist-generated=true

@@ -29,11 +29,31 @@ private structure TheoremRow where
   wholeClass : Nat
 
 private structure FrontierCandidate where
+  name : Name
   statementMask : Nat
   statementHasOther : Bool
   wholeMask : Nat
   wholeHasOther : Bool
   directProofDependencies : Array Name
+
+private structure DominatorInfo where
+  root : Name
+  idom : Std.HashMap Name Name := {}
+  nodeCount : Nat := 0
+  missingEdgeDetected : Bool := false
+
+private structure GainEvidence where
+  theoremCount : Nat := 0
+  examples : Array Name := #[]
+
+private structure GainRow where
+  candidate : Name
+  theoremCount : Nat
+  candidateClass : Nat
+  statementClass : Nat
+  kind : String
+  moduleName : String
+  examples : Array Name
 
 private def usesChoice (mask : Nat) : Bool :=
   mask >= 4
@@ -44,6 +64,147 @@ private def isStrictFrontier (candidate : FrontierCandidate) : Bool :=
 
 private def isChoiceFrontier (candidate : FrontierCandidate) : Bool :=
   !usesChoice candidate.statementMask && usesChoice candidate.wholeMask
+
+private def maskUses (mask bit : Nat) : Bool :=
+  (mask / bit) % 2 == 1
+
+private def addExprConstants (result : NameSet) (expr : Expr) : NameSet :=
+  expr.getUsedConstants.foldl (init := result) fun result name => result.insert name
+
+private def directDependencies (env : Environment) (name : Name) : Array Name :=
+  match env.find? name with
+  | some (.axiomInfo value) => (addExprConstants {} value.type).toArray
+  | some (.defnInfo value) =>
+      (addExprConstants (addExprConstants {} value.type) value.value).toArray
+  | some (.thmInfo value) =>
+      (addExprConstants (addExprConstants {} value.type) value.value).toArray
+  | some (.opaqueInfo value) =>
+      (addExprConstants (addExprConstants {} value.type) value.value).toArray
+  | some (.ctorInfo value) => (addExprConstants {} value.type).toArray
+  | some (.recInfo value) => (addExprConstants {} value.type).toArray
+  | some (.inductInfo value) =>
+      let result := value.ctors.foldl (init := addExprConstants {} value.type) fun result ctor =>
+        result.insert ctor
+      result.toArray
+  | some value => (addExprConstants {} value.type).toArray
+  | none => #[]
+
+private def intersectNameSets (left right : NameSet) : NameSet :=
+  left.toArray.foldl (init := {}) fun result name =>
+    if right.contains name then result.insert name else result
+
+private partial def reversePostorderVisit
+    (successors : Std.HashMap Name (Array Name)) (name : Name) :
+    StateM (NameSet × Array Name) Unit := do
+  let (visited, _) ← get
+  if visited.contains name then
+    return ()
+  modify fun state => (state.1.insert name, state.2)
+  for successor in successors[name]?.getD #[] do
+    reversePostorderVisit successors successor
+  modify fun state => (state.1, state.2.push name)
+
+private def intersectImmediateDominators
+    (idom : Std.HashMap Name Name) (rpoIndex : Std.HashMap Name Nat)
+    (left right : Name) : Name := Id.run do
+  let mut left := left
+  let mut right := right
+  while left != right do
+    while (rpoIndex[left]?.getD 0) > (rpoIndex[right]?.getD 0) do
+      left := idom[left]?.getD left
+    while (rpoIndex[right]?.getD 0) > (rpoIndex[left]?.getD 0) do
+      right := idom[right]?.getD right
+  return left
+
+private def buildDominatorInfo (env : Environment)
+    (classes : Std.HashMap Name (Nat × Bool)) (target : Name) (targetBit : Nat) :
+    DominatorInfo := Id.run do
+  let mut successors : Std.HashMap Name (Array Name) := {}
+  let mut predecessors : Std.HashMap Name (Array Name) := {}
+  let mut missingEdgeDetected := false
+  for (name, _) in env.constants do
+    let (mask, _) := classes[name]?.getD (0, false)
+    if maskUses mask targetBit then
+      let relevant := (directDependencies env name).filter fun dependency =>
+        let (dependencyMask, _) := classes[dependency]?.getD (0, false)
+        maskUses dependencyMask targetBit
+      if name != target && relevant.isEmpty then
+        missingEdgeDetected := true
+      for dependency in relevant do
+        let dependentNodes := successors[dependency]?.getD #[]
+        successors := successors.insert dependency (dependentNodes.push name)
+        let dependencyNodes := predecessors[name]?.getD #[]
+        predecessors := predecessors.insert name (dependencyNodes.push dependency)
+  let (_, traversal) := (reversePostorderVisit successors target).run ({}, #[])
+  let reversePostorder := traversal.2.reverse
+  let mut rpoIndex : Std.HashMap Name Nat := {}
+  for i in [0:reversePostorder.size] do
+    rpoIndex := rpoIndex.insert reversePostorder[i]! i
+  let mut idom : Std.HashMap Name Name := {}
+  idom := idom.insert target target
+  let mut changed := true
+  while changed do
+    changed := false
+    for i in [1:reversePostorder.size] do
+      let name := reversePostorder[i]!
+      let mut newIdom? : Option Name := none
+      for predecessor in predecessors[name]?.getD #[] do
+        if idom.contains predecessor then
+          newIdom? := some <| match newIdom? with
+            | none => predecessor
+            | some current =>
+                intersectImmediateDominators idom rpoIndex current predecessor
+      if let some newIdom := newIdom? then
+        if idom[name]? != some newIdom then
+          idom := idom.insert name newIdom
+          changed := true
+  return {
+    root := target
+    idom
+    nodeCount := reversePostorder.size
+    missingEdgeDetected
+  }
+
+private def dominatorChainAux (info : DominatorInfo) :
+    Nat → Name → NameSet → Option NameSet
+  | 0, _, _ => none
+  | Nat.succ fuel, name, result =>
+      let result := result.insert name
+      if name == info.root then
+        some result
+      else
+        match info.idom[name]? with
+        | some parent => dominatorChainAux info fuel parent result
+        | none => none
+
+private def dominatorChain (info : DominatorInfo) (name : Name) : Option NameSet :=
+  dominatorChainAux info (info.nodeCount + 1) name {}
+
+private def isNonAxiomDeclaration (env : Environment) (name : Name) : Bool :=
+  match env.find? name with
+  | some (.axiomInfo _) => false
+  | some _ => true
+  | none => false
+
+private def bumpEvidence (counts : Std.HashMap Name GainEvidence)
+    (candidate theoremName : Name) : Std.HashMap Name GainEvidence :=
+  let evidence := counts[candidate]?.getD {}
+  let examples :=
+    if evidence.examples.size < 5 then evidence.examples.push theoremName else evidence.examples
+  counts.insert candidate {
+    theoremCount := evidence.theoremCount + 1
+    examples
+  }
+
+private def declarationKind : ConstantInfo → String
+  | .axiomInfo _ => "axiom"
+  | .defnInfo _ => "definition"
+  | .thmInfo _ => "theorem"
+  | .opaqueInfo _ => "opaque"
+  | .ctorInfo _ => "constructor"
+  | .recInfo _ => "recursor"
+  | .inductInfo _ => "inductive"
+  | _ => "other"
 
 private def bump (counts : Array Nat) (i : Nat) : Array Nat :=
   counts.set! i (counts[i]! + 1)
@@ -125,6 +286,103 @@ private def writeDependencyFrequency (env : Environment)
       out.putStrLn s!"{policy}\t{name}\t{count}\t{idx}\t{sourceModule env name}"
   out.flush
 
+private def scoreCounterfactualGains (env : Environment)
+    (classes : Std.HashMap Name (Nat × Bool)) (candidates : Array FrontierCandidate) :
+    Std.HashMap Name GainEvidence × Std.HashMap Name GainEvidence × Bool × Nat := Id.run do
+  let candidates := candidates.toList.mergeSort fun left right =>
+    left.name.toString < right.name.toString
+  let propextInfo := buildDominatorInfo env classes ``propext 1
+  let quotInfo := buildDominatorInfo env classes ``Quot.sound 2
+  let choiceInfo := buildDominatorInfo env classes ``Classical.choice 4
+  let mut strictCounts : Std.HashMap Name GainEvidence := {}
+  let mut choiceCounts : Std.HashMap Name GainEvidence := {}
+  let mut graphInvalid :=
+    propextInfo.missingEdgeDetected || quotInfo.missingEdgeDetected ||
+      choiceInfo.missingEdgeDetected
+  let mut unsupportedOther := 0
+  for candidate in candidates do
+    if isStrictFrontier candidate then
+      if candidate.wholeHasOther then
+        unsupportedOther := unsupportedOther + 1
+      else
+        let mut common? : Option NameSet := none
+        if maskUses candidate.wholeMask 1 then
+          match dominatorChain propextInfo candidate.name with
+          | some nodes => common? := some nodes
+          | none => graphInvalid := true
+        if maskUses candidate.wholeMask 2 then
+          match dominatorChain quotInfo candidate.name with
+          | some nodes =>
+              common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          | none => graphInvalid := true
+        if maskUses candidate.wholeMask 4 then
+          match dominatorChain choiceInfo candidate.name with
+          | some nodes =>
+              common? := some <| common?.map (intersectNameSets · nodes) |>.getD nodes
+          | none => graphInvalid := true
+        for name in common?.getD {} |>.toArray do
+          if isNonAxiomDeclaration env name then
+            strictCounts := bumpEvidence strictCounts name candidate.name
+    if isChoiceFrontier candidate then
+      match dominatorChain choiceInfo candidate.name with
+      | some nodes =>
+          for name in nodes.toArray do
+            if isNonAxiomDeclaration env name then
+              choiceCounts := bumpEvidence choiceCounts name candidate.name
+      | none => graphInvalid := true
+  return (strictCounts, choiceCounts, graphInvalid, unsupportedOther)
+
+private def gainRows (env : Environment) (classes : Std.HashMap Name (Nat × Bool))
+    (strictPolicy : Bool) (counts : Std.HashMap Name GainEvidence) :
+    Lean.Elab.Command.CommandElabM (Array GainRow) := do
+  let entries := counts.toList.mergeSort fun left right =>
+    if left.2.theoremCount == right.2.theoremCount then
+      left.1.toString < right.1.toString
+    else
+      left.2.theoremCount > right.2.theoremCount
+  let mut rows : Array GainRow := #[]
+  for (name, evidence) in entries do
+    if rows.size < 100 then
+      match env.find? name with
+      | some info =>
+          let statementAxioms ← exprAxioms info.type
+          let (statementMask, statementHasOther) := standardMask statementAxioms
+          let policyClean :=
+            if strictPolicy then statementMask == 0 && !statementHasOther
+            else !usesChoice statementMask
+          if policyClean then
+            let (candidateMask, candidateHasOther) := classes[name]?.getD (0, false)
+            rows := rows.push {
+              candidate := name
+              theoremCount := evidence.theoremCount
+              candidateClass := if candidateHasOther then 8 else candidateMask
+              statementClass := if statementHasOther then 8 else statementMask
+              kind := declarationKind info
+              moduleName := sourceModule env name
+              examples := evidence.examples
+            }
+      | none => pure ()
+  return rows
+
+private def writeCounterfactualGains (env : Environment)
+    (classes : Std.HashMap Name (Nat × Bool)) (candidates : Array FrontierCandidate) :
+    Lean.Elab.Command.CommandElabM Unit := do
+  let (strictCounts, choiceCounts, graphInvalid, unsupportedOther) :=
+    scoreCounterfactualGains env classes candidates
+  if graphInvalid then
+    throwError "cycle or missing edge found in an axiom-relevant dependency graph"
+  if unsupportedOther != 0 then
+    throwError s!"strict frontier contains {unsupportedOther} theorem(s) using an unclassified axiom"
+  let strictRows ← gainRows env classes true strictCounts
+  let choiceRows ← gainRows env classes false choiceCounts
+  let out ← IO.FS.Handle.mk "results/CounterfactualGain.tsv" .write
+  out.putStrLn
+    "policy\tcandidate\ttheorem_gain\tcandidate_class\tstatement_class\tkind\tmodule\texamples"
+  for (policy, rows) in [("strict_zero", strictRows), ("choice_free", choiceRows)] do
+    for row in rows do
+      out.putStrLn s!"{policy}\t{row.candidate}\t{row.theoremCount}\t{row.candidateClass}\t{row.statementClass}\t{row.kind}\t{row.moduleName}\t{String.intercalate ";" (row.examples.toList.map toString)}"
+  out.flush
+
 run_cmd do
   let env ← getEnv
   let mut allCounts := Array.replicate 9 0
@@ -175,6 +433,7 @@ run_cmd do
               wholeClass := idx
             }
             let candidate : FrontierCandidate := {
+              name
               statementMask
               statementHasOther
               wholeMask := mask
@@ -221,3 +480,4 @@ run_cmd do
     IO.println s!"{classLabel idx}: {theoremExamples[idx]!.toList}"
   writeTheoremData theoremRows
   writeDependencyFrequency env axiomClasses frontierCandidates
+  writeCounterfactualGains env axiomClasses frontierCandidates

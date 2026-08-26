@@ -80,6 +80,7 @@ API designation.
 | `Audit/ZeroBenchmarks.lean` | `#print axioms` checks for the replacement proofs |
 | `results/TheoremData.tsv` | One machine-readable row per user-facing Mathlib theorem |
 | `results/DirectDependencyFrequency.tsv` | Most frequent contaminated direct proof dependencies |
+| `results/CounterfactualGain.tsv` | Exact single-declaration cleanup gains on the dependency graph |
 | `results/` | Other committed output from the pinned audit run |
 | `REPORT.md` | Full findings and interpretation |
 
@@ -105,8 +106,21 @@ class does not contain bit 4 but whose whole class does.
 `results/DirectDependencyFrequency.tsv` ranks direct constants occurring in
 frontier proof terms by the number of frontier theorems that mention them.
 This is an exact direct-reference count and a useful triage heuristic. It is
-not yet a counterfactual cleanup score: a theorem may have additional paths
-to the same axiom after one dependency is repaired.
+not a counterfactual cleanup score: a theorem may have additional paths to the
+same axiom after one dependency is repaired.
+
+`results/CounterfactualGain.tsv` performs the stronger graph calculation. A
+candidate receives credit for a frontier theorem exactly when it dominates
+every path from that theorem to every axiom forbidden by the selected policy.
+Candidates must be non-axiom declarations whose own statements already meet
+the policy. `theorem_gain` therefore gives the exact result of the explicit
+single-declaration counterfactual: replace that candidate's implementation by
+a policy-clean one while leaving the rest of the dependency graph unchanged.
+
+This score does not prove that such a replacement exists, measure the effect
+of repairing several declarations together, or cover reformulations that
+change a statement. It concerns final kernel dependencies; metalinguistic and
+tooling uses of classical reasoning remain a separate classification problem.
 
 ## Reproduce
 
