@@ -4,6 +4,12 @@
 [![Lean 4.33.0](https://img.shields.io/badge/Lean-4.33.0-blue)](https://github.com/leanprover/lean4/releases/tag/v4.33.0)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
+«The center of gravity of this project is epistemic, not social.»
+
+This project exists to find answers: to determine what can be proved in axiom-free Lean, which familiar assumptions are genuinely necessary, and how much standard mathematical machinery can be discarded. It is not a popularity contest, a credentialing exercise, or a bid for anyone’s approval.
+
+This repository contains substantial AI-generated and AI-assisted code. That code must meet exactly the same standard as any other code: it must be inspectable, reproducible, and accepted by Lean’s kernel with its axiomatic dependencies made explicit. AI involvement is neither evidence for nor evidence against a mathematical result. If its presence offends you on principle, go find somewhere else to play.
+
 A reproducible census of what Lean and mathlib can formalize without
 `propext`, `Quot.sound`, or `Classical.choice`.
 
