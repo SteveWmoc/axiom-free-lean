@@ -17,6 +17,7 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    # The complete Mathlib census takes about 32 minutes on a standard public runner.
     timeout-minutes: 60
 
     steps:
