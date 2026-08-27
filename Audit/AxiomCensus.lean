@@ -116,25 +116,9 @@ private def intersectImmediateDominators
       right := idom[right]?.getD right
   return left
 
-private def buildDominatorInfo (env : Environment)
-    (classes : Std.HashMap Name (Nat × Bool)) (target : Name) (targetBit : Nat) :
-    DominatorInfo := Id.run do
-  let mut successors : Std.HashMap Name (Array Name) := {}
-  let mut predecessors : Std.HashMap Name (Array Name) := {}
-  let mut missingEdgeDetected := false
-  for (name, _) in env.constants do
-    let (mask, _) := classes[name]?.getD (0, false)
-    if maskUses mask targetBit then
-      let relevant := (directDependencies env name).filter fun dependency =>
-        let (dependencyMask, _) := classes[dependency]?.getD (0, false)
-        maskUses dependencyMask targetBit
-      if name != target && relevant.isEmpty then
-        missingEdgeDetected := true
-      for dependency in relevant do
-        let dependentNodes := successors[dependency]?.getD #[]
-        successors := successors.insert dependency (dependentNodes.push name)
-        let dependencyNodes := predecessors[name]?.getD #[]
-        predecessors := predecessors.insert name (dependencyNodes.push dependency)
+private def buildDominatorInfo (target : Name)
+    (successors predecessors : Std.HashMap Name (Array Name))
+    (missingEdgeDetected : Bool) : DominatorInfo := Id.run do
   let (_, traversal) := (reversePostorderVisit successors target).run ({}, #[])
   let reversePostorder := traversal.2.reverse
   let mut rpoIndex : Std.HashMap Name Nat := {}
@@ -291,9 +275,60 @@ private def scoreCounterfactualGains (env : Environment)
     Std.HashMap Name GainEvidence × Std.HashMap Name GainEvidence × Bool × Nat := Id.run do
   let candidates := candidates.toList.mergeSort fun left right =>
     left.name.toString < right.name.toString
-  let propextInfo := buildDominatorInfo env classes ``propext 1
-  let quotInfo := buildDominatorInfo env classes ``Quot.sound 2
-  let choiceInfo := buildDominatorInfo env classes ``Classical.choice 4
+  let mut propextSuccessors : Std.HashMap Name (Array Name) := {}
+  let mut propextPredecessors : Std.HashMap Name (Array Name) := {}
+  let mut quotSuccessors : Std.HashMap Name (Array Name) := {}
+  let mut quotPredecessors : Std.HashMap Name (Array Name) := {}
+  let mut choiceSuccessors : Std.HashMap Name (Array Name) := {}
+  let mut choicePredecessors : Std.HashMap Name (Array Name) := {}
+  let mut propextMissingEdgeDetected := false
+  let mut quotMissingEdgeDetected := false
+  let mut choiceMissingEdgeDetected := false
+  -- Extract every declaration's constants once, then route each relevant edge to all
+  -- of the standard-axiom graphs it belongs to.
+  for (name, _) in env.constants do
+    let (mask, _) := classes[name]?.getD (0, false)
+    let nameUsesPropext := maskUses mask 1
+    let nameUsesQuot := maskUses mask 2
+    let nameUsesChoice := maskUses mask 4
+    if nameUsesPropext || nameUsesQuot || nameUsesChoice then
+      let mut foundPropext := false
+      let mut foundQuot := false
+      let mut foundChoice := false
+      for dependency in directDependencies env name do
+        let (dependencyMask, _) := classes[dependency]?.getD (0, false)
+        if nameUsesPropext && maskUses dependencyMask 1 then
+          foundPropext := true
+          let dependentNodes := propextSuccessors[dependency]?.getD #[]
+          propextSuccessors := propextSuccessors.insert dependency (dependentNodes.push name)
+          let dependencyNodes := propextPredecessors[name]?.getD #[]
+          propextPredecessors := propextPredecessors.insert name (dependencyNodes.push dependency)
+        if nameUsesQuot && maskUses dependencyMask 2 then
+          foundQuot := true
+          let dependentNodes := quotSuccessors[dependency]?.getD #[]
+          quotSuccessors := quotSuccessors.insert dependency (dependentNodes.push name)
+          let dependencyNodes := quotPredecessors[name]?.getD #[]
+          quotPredecessors := quotPredecessors.insert name (dependencyNodes.push dependency)
+        if nameUsesChoice && maskUses dependencyMask 4 then
+          foundChoice := true
+          let dependentNodes := choiceSuccessors[dependency]?.getD #[]
+          choiceSuccessors := choiceSuccessors.insert dependency (dependentNodes.push name)
+          let dependencyNodes := choicePredecessors[name]?.getD #[]
+          choicePredecessors := choicePredecessors.insert name (dependencyNodes.push dependency)
+      if nameUsesPropext && name != ``propext && !foundPropext then
+        propextMissingEdgeDetected := true
+      if nameUsesQuot && name != ``Quot.sound && !foundQuot then
+        quotMissingEdgeDetected := true
+      if nameUsesChoice && name != ``Classical.choice && !foundChoice then
+        choiceMissingEdgeDetected := true
+  let propextInfo :=
+    buildDominatorInfo ``propext propextSuccessors propextPredecessors
+      propextMissingEdgeDetected
+  let quotInfo :=
+    buildDominatorInfo ``Quot.sound quotSuccessors quotPredecessors quotMissingEdgeDetected
+  let choiceInfo :=
+    buildDominatorInfo ``Classical.choice choiceSuccessors choicePredecessors
+      choiceMissingEdgeDetected
   let mut strictCounts : Std.HashMap Name GainEvidence := {}
   let mut choiceCounts : Std.HashMap Name GainEvidence := {}
   let mut graphInvalid :=
