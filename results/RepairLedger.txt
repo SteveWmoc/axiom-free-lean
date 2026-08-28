@@ -1,0 +1,5 @@
+'map_sub'' depends on axioms: [propext, Classical.choice, Quot.sound]
+'AxiomFreeLean.Repairs.zero_map_div'' does not depend on any axioms
+'AxiomFreeLean.Repairs.zero_map_sub'' does not depend on any axioms
+'AxiomFreeLean.Repairs.propext_of_propIntro' does not depend on any axioms
+'AxiomFreeLean.Repairs.em_of_decidesAll' does not depend on any axioms

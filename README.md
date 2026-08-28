@@ -73,14 +73,17 @@ API designation.
 | Path | Purpose |
 |---|---|
 | `AxiomFreeLean/Benchmarks.lean` | Reusable declarations with verified empty axiom sets |
+| `AxiomFreeLean/Repairs/` | Independently maintained identical-statement replacement proofs |
 | `Audit/AxiomCensus.lean` | Eight-class theorem and statement census |
 | `Audit/AxiomPaths.lean` | Shortest transitive dependency paths to the three axioms |
 | `Audit/CoreProbe.lean` | Small kernel and `Std` landmarks |
 | `Audit/RepresentativeProbe.lean` | Representative mathlib landmarks |
-| `Audit/ZeroBenchmarks.lean` | `#print axioms` checks for the replacement proofs |
+| `Audit/ZeroBenchmarks.lean` | `#print axioms` checks for the original benchmark proofs |
+| `Audit/RepairLedger.lean` | Kernel checks for data-selected repairs and reductions |
 | `results/TheoremData.tsv` | One machine-readable row per user-facing Mathlib theorem |
 | `results/DirectDependencyFrequency.tsv` | Most frequent contaminated direct proof dependencies |
 | `results/CounterfactualGain.tsv` | Exact single-declaration cleanup gains on the dependency graph |
+| `results/RepairLedger.tsv` | Evidence-backed feasibility classifications and verified repairs |
 | `results/` | Other committed output from the pinned audit run |
 | `REPORT.md` | Full findings and interpretation |
 
@@ -121,6 +124,19 @@ This score does not prove that such a replacement exists, measure the effect
 of repairing several declarations together, or cover reformulations that
 change a statement. It concerns final kernel dependencies; metalinguistic and
 tooling uses of classical reasoning remain a separate classification problem.
+
+## Repair ledger
+
+`results/RepairLedger.tsv` turns selected counterfactual candidates into an
+evidence-backed work queue. It distinguishes verified identical-statement
+repairs from statements expressing foundational or classical principles and
+from interfaces whose present implementations explicitly use choice.
+
+Verified proofs live under `AxiomFreeLean/Repairs/` under independent names.
+They are maintained here regardless of whether any upstream library adopts
+them. The first data-selected repair is `map_sub'`: its current declaration
+has class 7, while `AxiomFreeLean.Repairs.zero_map_sub'` has the identical
+statement shape and class 0. Its single-declaration choice-free gain is 231.
 
 ## Reproduce
 

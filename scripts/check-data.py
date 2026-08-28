@@ -99,11 +99,12 @@ def validate_dependency_frequency(path: Path) -> None:
 
 def validate_counterfactual_gain(
     path: Path, theorem_classes: dict[str, tuple[int, int]]
-) -> None:
+) -> dict[tuple[str, str], tuple[int, int, int]]:
     rows_by_policy: dict[str, list[tuple[int, str]]] = {
         "strict_zero": [],
         "choice_free": [],
     }
+    candidates: dict[tuple[str, str], tuple[int, int, int]] = {}
     with path.open(newline="", encoding="utf-8") as stream:
         reader = csv.DictReader(stream, delimiter="\t")
         expected_fields = [
@@ -152,17 +153,78 @@ def validate_counterfactual_gain(
                     assert not theorem_statement & 4 and theorem_whole & 4, row
 
             rows_by_policy[policy].append((gain, candidate))
+            candidates[key] = (gain, candidate_class, statement_class)
 
     for policy, rows in rows_by_policy.items():
         assert len(rows) == 100, (policy, len(rows))
         assert rows == sorted(rows, key=lambda item: (-item[0], item[1])), policy
+    return candidates
+
+
+def validate_repair_ledger(
+    path: Path,
+    counterfactual: dict[tuple[str, str], tuple[int, int, int]],
+) -> None:
+    classifications = {
+        "verified_repair",
+        "foundational_principle",
+        "implies_forbidden_principle",
+        "classical_principle",
+        "choice_principle",
+        "choice_using_interface",
+    }
+    expected_keys = {
+        ("strict_zero", "funext"),
+        ("strict_zero", "Eq.propIntro"),
+        ("choice_free", "Classical.propDecidable"),
+        ("choice_free", "Set.instCompleteAtomicBooleanAlgebra"),
+        ("choice_free", "Classical.indefiniteDescription"),
+        ("choice_free", "map_sub'"),
+    }
+    seen: set[tuple[str, str]] = set()
+
+    with path.open(newline="", encoding="utf-8") as stream:
+        reader = csv.DictReader(stream, delimiter="\t")
+        assert reader.fieldnames == [
+            "policy",
+            "candidate",
+            "theorem_gain",
+            "current_class",
+            "statement_class",
+            "classification",
+            "replacement",
+            "replacement_class",
+            "evidence",
+        ], reader.fieldnames
+
+        for row in reader:
+            key = (row["policy"], row["candidate"])
+            assert key in expected_keys and key not in seen, key
+            seen.add(key)
+            gain, current_class, statement_class = counterfactual[key]
+            assert int(row["theorem_gain"]) == gain, row
+            assert int(row["current_class"]) == current_class, row
+            assert int(row["statement_class"]) == statement_class, row
+            assert row["classification"] in classifications, row
+            assert row["evidence"], row
+
+            if row["classification"] == "verified_repair":
+                assert row["replacement"], row
+                assert int(row["replacement_class"]) == 0, row
+            else:
+                assert not row["replacement"] and not row["replacement_class"], row
+
+    assert seen == expected_keys, expected_keys - seen
 
 
 def main() -> None:
     theorem_classes = validate_theorem_data(Path("results/TheoremData.tsv"))
     validate_dependency_frequency(Path("results/DirectDependencyFrequency.tsv"))
-    validate_counterfactual_gain(Path("results/CounterfactualGain.tsv"), theorem_classes)
-    print("theorem-level data checks passed")
+    counterfactual = validate_counterfactual_gain(
+        Path("results/CounterfactualGain.tsv"), theorem_classes
+    )
+    validate_repair_ledger(Path("results/RepairLedger.tsv"), counterfactual)
+    print("theorem-level data and repair-ledger checks passed")
 
 
 if __name__ == "__main__":

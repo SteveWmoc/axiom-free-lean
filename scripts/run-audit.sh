@@ -7,6 +7,7 @@ for audit in \
   Audit/CoreProbe.lean \
   Audit/RepresentativeProbe.lean \
   Audit/ZeroBenchmarks.lean \
+  Audit/RepairLedger.lean \
   Audit/AxiomPaths.lean \
   Audit/AxiomCensus.lean
 do
