@@ -1,0 +1,7 @@
+policy	candidate	theorem_gain	current_class	statement_class	classification	replacement	replacement_class	evidence
+strict_zero	funext	1435	2	0	foundational_principle			candidate is function extensionality
+strict_zero	Eq.propIntro	905	1	0	implies_forbidden_principle			AxiomFreeLean.Repairs.propext_of_propIntro
+choice_free	Classical.propDecidable	9540	7	0	classical_principle			AxiomFreeLean.Repairs.em_of_decidesAll
+choice_free	Set.instCompleteAtomicBooleanAlgebra	1010	7	0	choice_using_interface			iInf_iSup_eq proof uses Classical.skolem
+choice_free	Classical.indefiniteDescription	901	4	0	choice_principle			candidate is indefinite description
+choice_free	map_sub'	231	7	0	verified_repair	AxiomFreeLean.Repairs.zero_map_sub'	0	Audit/RepairLedger.lean

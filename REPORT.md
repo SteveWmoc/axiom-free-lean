@@ -137,6 +137,26 @@ fixed.” It neither proves that the replacement exists nor predicts joint gains
 repairs. Statement reformulations, metalinguistic uses of classical principles, and tooling-only
 uses are outside this kernel-dependency calculation and should be classified separately.
 
+## Evidence-backed repair ledger
+
+`results/RepairLedger.tsv` adds the missing feasibility layer. Each selected candidate is tied back
+to its counterfactual score and classified using explicit evidence. The initial ledger distinguishes:
+
+- verified identical-statement repairs;
+- declarations that are themselves foundational or classical principles;
+- declarations that imply a forbidden principle; and
+- interfaces whose current proof explicitly invokes choice but whose exact logical strength still
+  requires analysis.
+
+The first data-selected repair is `map_sub'`, generated from the `map_div'` proof in
+`Mathlib.Algebra.Group.Hom.Defs`. The current declaration has class 7. The independently named
+`AxiomFreeLean.Repairs.zero_map_sub'` follows subtraction as addition of a negative directly and
+has class 0. The exact single-declaration calculation assigns this candidate a choice-free gain of
+231 theorems.
+
+The repair layer is maintained in this repository under independent names. Its mathematical value
+and reproducibility do not depend on adoption by an upstream project.
+
 ## Domain snapshot
 
 These are source-directory counts. “Choice-free” allows `propext` and/or `Quot.sound`; “zero” allows
@@ -223,6 +243,7 @@ axioms.” It contains:
 - the pointwise form of `List.map id`;
 - an identical zero-axiom replacement proof of `List.reverse_reverse`;
 - an identical zero-axiom replacement proof of `Nat.dvd_antisymm`;
+- an identical zero-axiom replacement proof of `map_sub'`;
 - a pointwise-equivalence formulation of commutativity of set union.
 
 The first two cleanup proofs show that at least some dependencies recorded in core/Mathlib are proof
@@ -257,8 +278,8 @@ Operationally, the answer is now fairly sharp.
 ## Recommended program of work
 
 1. Turn `AxiomCensus.lean` and `AxiomPaths.lean` into a small pinned audit project with CI.
-2. Submit the two proven low-level cleanups (`List.reverse_reverse` and `Nat.dvd_antisymm`) upstream,
-   then use the same method on `Nat.gcd_comm` and `Nat.exists_infinite_primes`.
+2. Maintain an independent repair layer and evidence ledger, beginning with the proven low-level
+   cleanups and the data-selected `map_sub'` cluster.
 3. Use the theorem-level export to triage the 23,385-member strict frontier into: logically
    classical; proof/tactic contamination; dependency contamination; and extensional reformulation
    needed.
